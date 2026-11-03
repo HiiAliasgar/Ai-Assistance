@@ -1,98 +1,49 @@
-<h1 align="center">AI Assistant</h1>
+# AI Assistant
 
-<p align="center">
-  <b>Simple AI assistant using LangChain with tool-use capabilities</b>
-</p>
+A small Python command-line assistant built with LangChain and Groq. It demonstrates connecting a chat model to a set of application-defined tools and running an interactive conversation loop.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
-  <img src="https://img.shields.io/badge/LangChain-1C3C3C?style=for-the-badge" alt="LangChain" />
-  <img src="https://img.shields.io/badge/Groq-FF6B6B?style=for-the-badge" alt="Groq" />
-</p>
+## What it demonstrates
 
----
+- Initializing a Groq chat model through LangChain.
+- Defining simple tools such as calculation and greeting.
+- Connecting tools to a ReAct-style agent.
+- Accepting user input in a command-line loop.
 
-## Overview
+## Technology
 
-A Python script that creates a simple AI assistant using LangChain's Groq chat model and a React agent. It includes tool functions for calculation and greeting, then runs a loop to take user input and call the agent to respond.
+- Python
+- LangChain
+- langchain-groq
+- Groq API
+- python-dotenv
 
-### Features
-
-| Feature | Description |
-|---------|-------------|
-| 🧠 AI Chat | Natural language conversation |
-| 🔧 Tool Use | Calculator and greeting tools |
-| ⚡ Fast inference | Powered by Groq's fast inference |
-| 🔄 React Agent | Multi-step reasoning capability |
-
----
-
-## Quick Start
-
-### 1. Clone the repository
+## Setup
 
 ```bash
 git clone https://github.com/HiiAliasgar/Ai-Assistance.git
 cd Ai-Assistance
-```
 
-### 2. Create virtual environment
+python -m venv .venv
+# Windows: .venv\Scripts\activate
+# macOS/Linux: source .venv/bin/activate
 
-```bash
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-```
-
-### 3. Install dependencies
-
-```bash
 pip install langchain langchain-groq python-dotenv
 ```
 
-### 4. Set up API key
+Create a local `.env` file and add:
 
-```bash
-cp .env.example .env
-# Add your GROQ_API_KEY to .env
+```env
+GROQ_API_KEY=your_groq_api_key
 ```
 
-### 5. Run the assistant
+Run:
 
 ```bash
 python main.py
 ```
 
----
+## Learning scope
 
-## How It Works
+This is an introductory tool-calling example, not a production conversational platform. Tool coverage, error handling, persistence and evaluation should be expanded before using it in a real workflow.
 
-1. **Initialize** the Groq chat model via LangChain
-2. **Define tools** (calculator, greeting)
-3. **Create React agent** that can use tools
-4. **Chat loop** takes user input and responds
-
----
-
-## Project Structure
-
-```
-Ai-Assistance/
-├── main.py           # Main application
-├── .env              # Environment variables (not committed)
-├── .gitignore        # Git ignore rules
-├── .python-version   # Python version
-├── pyproject.toml    # Project configuration
-└── uv.lock          # Dependency lock file
-```
-
----
-
-## Author
-
-**Aliasgar Lohawala** - [@HiiAliasgar](https://github.com/HiiAliasgar)
-
----
-
-<p align="center">
-  Made with ❤️ and LangChain
-</p>
+[Source code](https://github.com/HiiAliasgar/Ai-Assistance)
