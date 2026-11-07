@@ -1,4 +1,5 @@
 import ast
+import math
 import operator
 import os
 from typing import Any, Callable, Iterable
@@ -9,6 +10,11 @@ from langchain_groq import ChatGroq
 from langgraph.prebuilt import create_react_agent
 
 QUIT_COMMANDS = {"quit", "exit", "q"}
+MAX_EXPRESSION_LENGTH = 256
+MAX_AST_NODES = 64
+MAX_EVALUATION_DEPTH = 16
+MAX_ABS_RESULT = 1e100
+MAX_POWER_EXPONENT = 10
 HELP_COMMANDS = {"help", "/help", "?"}
 DEFAULT_MODEL = "llama-3.1-8b-instant"
 
@@ -44,20 +50,32 @@ class ExpressionError(ValueError):
     """Raised when a calculator expression cannot be evaluated safely."""
 
 
-def _safe_eval(node: ast.AST) -> float:
+def _safe_eval(node: ast.AST, depth: int = 0) -> float:
+    if depth > MAX_EVALUATION_DEPTH:
+        raise ExpressionError("Expression is too deeply nested.")
     if isinstance(node, ast.Expression):
-        return _safe_eval(node.body)
+        return _safe_eval(node.body, depth + 1)
 
-    if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
-        return float(node.value)
+    if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)) and not isinstance(node.value, bool):
+        value = float(node.value)
+        if not math.isfinite(value) or abs(value) > MAX_ABS_RESULT:
+            raise ExpressionError("Numeric value is outside the supported range.")
+        return value
 
     if isinstance(node, ast.BinOp) and type(node.op) in _ALLOWED_OPERATORS:
-        left = _safe_eval(node.left)
-        right = _safe_eval(node.right)
-        return _ALLOWED_OPERATORS[type(node.op)](left, right)
+        left = _safe_eval(node.left, depth + 1)
+        right = _safe_eval(node.right, depth + 1)
+        if isinstance(node.op, ast.Pow) and abs(right) > MAX_POWER_EXPONENT:
+            raise ExpressionError("Exponent is too large.")
+        if isinstance(node.op, ast.Pow) and abs(left) > 1_000_000:
+            raise ExpressionError("Power base is too large.")
+        result = _ALLOWED_OPERATORS[type(node.op)](left, right)
+        if not math.isfinite(result) or abs(result) > MAX_ABS_RESULT:
+            raise ExpressionError("Result is outside the supported range.")
+        return result
 
     if isinstance(node, ast.UnaryOp) and type(node.op) in _ALLOWED_OPERATORS:
-        operand = _safe_eval(node.operand)
+        operand = _safe_eval(node.operand, depth + 1)
         return _ALLOWED_OPERATORS[type(node.op)](operand)
 
     raise ExpressionError("Only numeric arithmetic expressions are supported.")
@@ -67,11 +85,17 @@ def _safe_eval(node: ast.AST) -> float:
 def calculator(expression: str) -> str:
     """Evaluate a basic arithmetic expression. Example input: (2 + 3) * 4 / 5"""
     try:
+        if not isinstance(expression, str) or not expression.strip():
+            raise ExpressionError("Expression is empty.")
+        if len(expression) > MAX_EXPRESSION_LENGTH:
+            raise ExpressionError("Expression is too long.")
         parsed = ast.parse(expression, mode="eval")
+        if sum(1 for _ in ast.walk(parsed)) > MAX_AST_NODES:
+            raise ExpressionError("Expression is too complex.")
         result = _safe_eval(parsed)
     except ZeroDivisionError:
         return "I cannot divide by zero."
-    except (SyntaxError, ExpressionError):
+    except (SyntaxError, ExpressionError, OverflowError, ValueError, TypeError):
         return (
             "I can only evaluate arithmetic expressions with numbers and operators "
             "(+, -, *, /, **, %, //)."
